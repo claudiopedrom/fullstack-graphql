@@ -16,21 +16,47 @@ const ALL_PETS = gql`
   }
 `
 
+const NEW_PET = gql`
+  mutation CreateAPet($newPet: NewPetInput!) {
+    addPet(input: $newPet) {
+      id
+      name
+      type
+      img
+    }
+  }
+`
+
 export default function Pets () {
   const [modal, setModal] = useState(false)
-  // useQuery is gonna give back an array, cuz it's a hook 
+  // useQuery is gonna give back an object, cuz it's a hook 
   // takes a graphql query
   const {data, loading, error} = useQuery(ALL_PETS)
+  // useMutation returns an array
+  // we need to call the function provided from the hook `createPet`
+  // new pet is very similar to {data, loading, error}, etc.
+  const [createPet, newPet] = useMutation(NEW_PET, {
+    update(cache, {data: {addPet}}) {
+      const data = cache.readQuery({query: ALL_PETS})
+      cache.writeQuery({
+        query: ALL_PETS,
+        data: {pets: [addPet, ...data.pets]}
+      })
+    }
+  })
 
   const onSubmit = input => {
     setModal(false)
+    createPet({
+      variables: {newPet: input}
+    })
   }
 
-  if (loading) {
+  if (loading || newPet.loading) {
     return <Loader />
   }
 
-  if (error) {
+  if (error || newPet.error) {
     return <p>error!</p>
   }
   
