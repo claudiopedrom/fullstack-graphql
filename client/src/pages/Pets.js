@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import gql from 'graphql-tag'
 import { useQuery, useMutation } from '@apollo/react-hooks'
 import PetsList from '../components/PetsList'
@@ -27,39 +27,59 @@ const NEW_PET = gql`
   }
 `
 
-export default function Pets () {
+export default function Pets() {
   const [modal, setModal] = useState(false)
-  // useQuery is gonna give back an object, cuz it's a hook 
+  // useQuery is gonna give back an object, cuz it's a hook
   // takes a graphql query
-  const {data, loading, error} = useQuery(ALL_PETS)
+  const { data, loading, error } = useQuery(ALL_PETS)
   // useMutation returns an array
   // we need to call the function provided from the hook `createPet`
   // new pet is very similar to {data, loading, error}, etc.
   const [createPet, newPet] = useMutation(NEW_PET, {
-    update(cache, {data: {addPet}}) {
-      const data = cache.readQuery({query: ALL_PETS})
+    update(cache, { data: { addPet } }) {
+      const data = cache.readQuery({ query: ALL_PETS })
       cache.writeQuery({
         query: ALL_PETS,
-        data: {pets: [addPet, ...data.pets]}
+        data: { pets: [addPet, ...data.pets] }
       })
     }
+    // optimisticResponse: {
+    //   __typename: 'Mutation',
+    //   addPet: {
+    //     __typename: 'Pet',
+    //     id: Math.floor(Math.random() * 10000) + '',
+    //     name: 'from mutations',
+    //     type: 'CAT',
+    //     img: 'https://via.placeholder.com/300'
+    //   }
+    // }
   })
 
   const onSubmit = input => {
     setModal(false)
     createPet({
-      variables: {newPet: input}
+      variables: { newPet: input },
+      optimisticResponse: {
+        __typename: 'Mutation',
+        addPet: {
+          __typename: 'Pet',
+          id: Math.floor(Math.random() * 10000) + '',
+          name: input.name,
+          type: input.type,
+          img: 'https://via.placeholder.com/300'
+        }
+      }
     })
   }
 
-  if (loading || newPet.loading) {
+  if (loading) {
     return <Loader />
   }
 
   if (error || newPet.error) {
     return <p>error!</p>
   }
-  
+
   if (modal) {
     return <NewPetModal onSubmit={onSubmit} onCancel={() => setModal(false)} />
   }
