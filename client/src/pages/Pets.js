@@ -12,6 +12,11 @@ const ALL_PETS = gql`
       name
       type
       img
+      owner {
+        id
+        # age field is only on the client don't go to the server
+        age @client
+      }
     }
   }
 `
@@ -23,6 +28,10 @@ const NEW_PET = gql`
       name
       type
       img
+      owner {
+        id
+        age @client
+      }
     }
   }
 `
